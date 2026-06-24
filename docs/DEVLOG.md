@@ -1,7 +1,7 @@
 # 개발 로그 · 트러블슈팅 기록 (KNUT 졸업학점 계산기)
 
 > 포트폴리오 원천 자료. 각 항목은 **증상 → 원인 → 해결 → 검증** 형식으로, 실제 디버깅/설계 과정을 기록한다.
-> 작성 시점: 2026-06-23(섹션 0~5) → **2026-06-24 2차 세션 추가(섹션 6)**. 테스트 43 → **54개** 통과 · 타입체크/빌드 정상.
+> 작성 시점: 2026-06-23(섹션 0~5) → 2026-06-24 2차 세션(섹션 6) → **2026-06-25 3차 세션(섹션 7) + 🚀 Vercel 배포**. 테스트 43 → 54 → **61개** 통과 · 타입체크/빌드 정상 · 라이브 https://knut-grad-clac.vercel.app
 
 ## 0. 프로젝트 한눈에
 한국교통대 학생이 **졸업 진행 상황 + 다음 학기 수강 계획**을 휴대폰에서 보는 PWA.
@@ -214,9 +214,48 @@
 
 ---
 
-## 7. 남은 일 (새 세션 인수인계)
-1. **회원님 실데이터의 옛 재수강 과목**: 이전 세션에서 `retake`(옛 의미)로 저장된 계획 재수강 과목이 있으면 취소선+학점반영 상태일 수 있음 → 삭제 후 다시 추가(재수강으로 추가)하면 새 `retaking`으로 정상. (테스트 데이터면 무관)
-2. **import 이수구분 매핑 미완**: '부전공'/'복수·연계전공' 성적표 표기를 사용자에게 확인받아 `transcript.ts` CAT 맵에 1줄씩 추가(현재는 원본 표기 보존+경고로 표면화). 같은 이름 수강중 재수강은 과목 탭엔 배지 미적용(계획 탭만) — 필요 시 확장.
-3. **배포**(Vercel 확정): `public/mockups.html`·`public/mockups/` 삭제 → `git init`(현재 미초기화) → GitHub 공개 레포 → Vercel 연결.
-4. **포트폴리오 작성**: 이 DEVLOG(섹션 0~6) + README 기반 정리. 강조 포인트 — 8차원 일관성 감사 방법론(6.2), 접기 애니메이션 삼중 트러블슈팅(6.4), 재수강 모델 4단계 진화(6.6), 라이브 e2e 검증 방법론(6.8).
-5. (선택) UI/UX 추가 polish, GPA 게이지 바, 6학년(초과학기) 옵션.
+## 7. 3차 작업 세션 (2026-06-25) — 재수강 GPA 정합 · UX 애니메이션 · 반응형 · **배포**
+
+> 흐름: 재수강 성적 규칙 버그 수정 → UX 다듬기(토스트·스크롤바·전환 애니메이션) → **Vercel 배포** → 실폰 반응형 수정. 까다롭고 *눈으로 검증 불가*한 결정(애니메이션·스크롤바)은 **Workflow(정찰→설계→적대적 검증)**로 굳히고, 코드 측정 + 사용자 캡쳐로 검증. 테스트 54→**61**.
+
+### 7.1 재수강 '높은 성적 우선' GPA 버그 (도메인 정합)
+- 증상: 2-1 자료구조 **C+** 이수 후 3-1 **C0** 재수강 완료 → GPA가 낮은 C0로 계산(높은 C+여야 함).
+- 원인: 코드기반 dedup(`getSuperseded`)은 '최고 성적 유지'로 옳지만, **수동 재수강 경로**(`completeCourses`·`addCourseRetaking`)가 성적 비교 없이 **무조건 최신 과목으로 대체**(옛 과목에 `retake`). `retake`를 박으면 grade-aware 비교에서도 빠져 낮은 성적이 굳음.
+- 해결: 공용 **`gradeScore`·`bestGradeId`**(`dedup.ts`) 추출 → 두 경로가 같은 과목 그룹에서 **최고 성적만 유효(retake 아님)**, 나머지 `retake`. (cap: 재수강 자격 C+↓·취득 상한 A0는 사용자 확인됐으나 별도 미구현)
+- 검증: 단위테스트 +7=61. 라이브 e2e — 2-1 C+ + 3-1 C0 재수강 완료 → GPA **2.50(C+)**, C0 취소선.
+
+### 7.2 토스트 알림 (피드백 위치)
+- 증상: 백업 탭 상단 "파일로 저장" 눌러도 확인 메시지가 한참 아래(복원 카드 뒤)에 떠 안 보임. 원인: 단일 `.banner`가 JSX 흐름에 고정 → 분산된 트리거와 어긋남.
+- 해결: `Toast.tsx`(body 포털·상단 고정·자동소멸 ok 2.5s/err 6s·`flushSync`로 상태 동기 커밋·**persistent live region**으로 스크린리더 보장). Workflow 적대적 검증이 라이브영역 상시 마운트·중앙정렬 단일화·에러 더 길게를 잡음.
+
+### 7.3 슬림 스크롤바 (공용 `.slim-scroll`)
+- 드롭다운·textarea·모달·페이지(html)의 OS 회색 스크롤바를 글래스 테마 8px 둥근 thumb로 교체. **함정**: 표준 `scrollbar-width`를 함께 쓰면 Chromium이 `::-webkit-scrollbar` 커스텀을 무시 → `@supports not selector(::-webkit-scrollbar)`로 Firefox 폴백만 분리. 둥근 모서리 밖 삐짐은 트랙 위·아래 인셋으로.
+
+### 7.4 상태전환 애니메이션 — 모핑 폐기, 도착 효과 채택 (설계 진화)
+- 목표: 학기 시작(planned→enrolled)·수강 완료(enrolled→completed)를 부드럽게.
+- 1차(View Transitions 모핑): 행에 `view-transition-name` → 행이 날아감. **그러나** 반투명 글래스+내용 변화(배지↔성적)로 옛/새 스냅샷이 크로스페이드되어 글자가 **"분신술"(고스팅)**. 게다가 두 구역이 모두 `overflow:hidden`이라 가로지르는 비행은 잘림.
+- 적대적 검증 결론: 깔끔한 비행은 body 포털 클론이 필요(과함). → **모핑 폐기**.
+- 최종: `markArrivals`(flushSync 후 새 위치 행에 `.row-arrive` 슬라이드+하이라이트). 스냅샷이 없어 고스팅·잘림 원천 차단. (테마용 `viewTransition.ts` 헬퍼는 만들었다 제거 — `theme.ts`가 자체 `startViewTransition` 사용.)
+
+### 7.5 반응형 (실폰 검증)
+- **한글 줄바꿈**: 좁은 폰에서 "졸업학점"→"졸업학/점"처럼 단어 중간 끊김 → `body`에 `word-break:keep-all`+`overflow-wrap:break-word`(전 텍스트 상속).
+- **헤더 문구**: eyebrow "졸업까지 함께"→"국립한국교통대학교", 제목 "국립한국교통대학교 졸업학점 계산기"→"졸업학점 계산기".
+- **폼 셀렉트 겹침**: 과목 추가/수정의 학기·성적 셀렉트가 좁은 화면에서 겹침. 원인: flex/grid 자식 기본 `min-width:auto`라 내용보다 못 줄어 칸 넘침 — 그리고 **flex 아이템이 트리거가 아니라 `.select` 래퍼**임을 rect 측정으로 발견. → `.select`·`.field-label`·`.select-trigger`에 `min-width:0`. 이어 칸 비율 조정(학기↑·성적↓ `minmax(0,1fr) minmax(0,0.42fr)`)+`.tight-selects`(패딩/캐럿 축소)로 '여름학기'(4글자) 수용. **검증**(`preview_resize`+rect/scrollWidth 측정): 360px+ 겹침·잘림 0(폼·모달), 320px만 4글자 학기·placeholder 살짝 잘림.
+
+### 7.6 배포 (Vercel)
+- `public/mockups*` 삭제 → `git init`(main) → `.gitignore`에 `CLAUDE.md`·`.claude/` 추가(AI 흔적 비공개) → 첫 커밋(작성자 JIVSAR<gnusoda@naver.com>·co-author 표기 없음) → GitHub 공개 레포 `JIVSAR/KNUT-Grad-Calc` → Vercel(Vite 자동감지, build `npm run build`/output `dist`) → 라이브 **https://knut-grad-clac.vercel.app**. `git push`→자동 재배포. manifest/start_url(`/`)·PWA 설치 점검 통과. `npm audit` 0건·xlsx 0.20.3(안전 버전). gh CLI 미설치(레포 웹 생성), 2FA 설정됨.
+- 보안 구조 설명: 백엔드/DB 없는 정적 PWA + 데이터는 기기 localStorage에만(서버 전송 0 — 코드로 확인) → 개인정보 대량 유출·서버 해킹이 구조상 불가. 잔여 리스크는 계정 2FA·의존성 업데이트 수준.
+
+### 7.7 검증 방법론 (이 세션 보강)
+- 반응형은 `preview_resize`로 320/360px 에뮬레이트 후 **요소 rect로 겹침/뷰포트 넘침**, **`.select-value` scrollWidth>clientWidth로 텍스트 잘림** 측정. 애니메이션·스크롤바 *모양*은 헤드리스라 못 봄 → 사용자 캡쳐로 최종 확인([[feedback_screenshot_assistance]] 패턴).
+- 어렵고 못 보는 결정은 **Workflow 다관점 적대적 검증**으로 사전에 결함 발견(토스트·전환 애니메이션에서 실제 블로커 잡음).
+
+---
+
+## 8. 남은 일 (새 세션 인수인계)
+> **배포 완료**(7.6). 사용자가 "수정할 게 많다"며 실폰에서 발견한 UI를 하나씩 짚어줄 예정 — **짚어주는 것만 외과적으로** 수정. 매 수정 `tsc`+Vitest+e2e, `git push`로 자동 재배포.
+1. **반응형 다듬기**: 360px+는 OK. 320px(아주 좁은 폰) 수정 모달에서 '여름학기'(4글자)·성적 'placeholder 미입력' 살짝 잘림 → 필요 시 초협소 폭에서 학년/학기 세로 스택.
+2. **import 이수구분 매핑**: '부전공'/'복수·연계전공' 표기 사용자 확인 후 `transcript.ts` CAT 맵에 추가.
+3. **포트폴리오 마무리**: `README.md` 최신화(현재 "테스트 32개" 등 stale → 61·배포·3차 세션) + 이 DEVLOG 다듬기.
+4. **재수강 cap**(미구현): 자격 C+↓·상한 A0 입력 제한+게이트.
+5. (선택) URL clac→calc(Vercel 프로젝트명), manifest theme_color 보라 통일, Dependabot, GPA 게이지, 6학년, 옛 retake 데이터 정리.
