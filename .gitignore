@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+*.log
+
+# AI 핸드오프/도구 설정 (로컬 전용, 공개 레포 제외)
+CLAUDE.md
+.claude/
+.vercel
