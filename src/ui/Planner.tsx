@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useStore } from '../state/store'
 import { useActiveSpec, useEvaluation, useProjection } from '../state/hooks'
 import { compareSem, semLabel } from '../semester'
@@ -7,6 +8,7 @@ import { AlsoCountsSelect } from './AlsoCountsSelect'
 import { Select } from './Select'
 import { ConfirmModal } from './ConfirmModal'
 import { Modal } from './Modal'
+import { replayShake } from '../lib/replayShake'
 import type { Course } from '../types'
 
 export default function Planner() {
@@ -24,6 +26,7 @@ export default function Planner() {
   const [semester, setSemester] = useState('')
   const [alsoCounts, setAlsoCounts] = useState<string[]>([])
   const [errors, setErrors] = useState<Set<string>>(new Set())
+  const addFormRef = useRef<HTMLDivElement | null>(null)
   const clearErr = (f: string) =>
     setErrors((p) => {
       if (!p.has(f)) return p
@@ -67,8 +70,10 @@ export default function Planner() {
     if (!categoryId) missing.add('categoryId')
     if (!semester) missing.add('semester')
     if (missing.size) {
-      setErrors(new Set())
-      setTimeout(() => setErrors(missing), 0)
+      // 빨간 강조·안내는 유지한 채(비우면 빈 프레임이 깜빡임) 흔들림만 리플로우로 재생.
+      // flushSync로 .field-error를 먼저 커밋해야 재시작 대상 요소가 DOM에 존재한다.
+      flushSync(() => setErrors(missing))
+      replayShake(addFormRef.current)
       return
     }
     const payload: Omit<Course, 'id'> = {
@@ -130,7 +135,7 @@ export default function Planner() {
       </section>
 
       {/* 과목 추가 (수강 계획 / 수강 중) */}
-      <section className="glass-card">
+      <section className="glass-card" ref={addFormRef}>
         <h2 className="card-title">과목 추가</h2>
         <div className="segmented" style={{ margin: '10px 0 12px' }}>
           <button className={mode === 'planned' ? 'on' : ''} onClick={() => setMode('planned')}>

@@ -10,6 +10,7 @@ import { ConfirmModal } from './ConfirmModal'
 import { Modal } from './Modal'
 import { UploadBox } from './UploadBox'
 import { flushSync } from 'react-dom'
+import { replayShake } from '../lib/replayShake'
 import type { Course } from '../types'
 import type { RequirementSpec } from '../data/requirements/types'
 
@@ -112,6 +113,7 @@ export default function Courses() {
   const [pendingDup, setPendingDup] = useState<{ payload: Draft; dupes: Course[] } | null>(null)
   const [pendingPick, setPendingPick] = useState(false)
   const enrollInputRef = useRef<HTMLInputElement | null>(null)
+  const addFormRef = useRef<HTMLDivElement | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const deletingCourse = deletingId ? courses.find((c) => c.id === deletingId) : null
 
@@ -195,9 +197,10 @@ export default function Courses() {
   const addSubmit = () => {
     const missing = requiredMissing(addDraft)
     if (missing.size) {
-      // 비어 있는 필수 항목 빨갛게 강조(재시도마다 흔들림 다시 보이도록 비웠다 채움)
-      setAddErrors(new Set())
-      setTimeout(() => setAddErrors(missing), 0)
+      // 빨간 강조·안내는 유지한 채(비우면 빈 프레임이 깜빡임) 흔들림만 리플로우로 재생.
+      // flushSync로 .field-error를 먼저 커밋해야 재시작 대상 요소가 DOM에 존재한다.
+      flushSync(() => setAddErrors(missing))
+      replayShake(addFormRef.current)
       return
     }
     const payload = toPayload(addDraft)
@@ -270,7 +273,6 @@ export default function Courses() {
           </svg>
           <span>
             업로드한 성적표·개인정보는 <b>이 기기(브라우저)에만</b> 저장돼요.
-            <br />
             서버로 전송되지 않습니다.
           </span>
         </p>
@@ -294,7 +296,7 @@ export default function Courses() {
       </section>
 
       {/* 이수 과목 추가 */}
-      <section className="glass-card">
+      <section className="glass-card" ref={addFormRef}>
         <h2 className="card-title">이수 완료 과목 추가</h2>
         <p className="card-sub">들을 예정 과목은 '계획' 탭에서 추가하세요.</p>
         <CourseFields draft={addDraft} setDraft={setAddDraftV} spec={spec} errors={addErrors} />
@@ -577,16 +579,40 @@ function CourseEditModal({
   onClose: () => void
 }) {
   const [draft, setDraft] = useState<Draft>(() => draftFromCourse(course))
+  const [errors, setErrors] = useState<Set<string>>(new Set())
+  const fieldsRef = useRef<HTMLDivElement | null>(null)
+
+  // 입력 변경: 값이 채워진 필수 항목은 오류 강조를 해제한다(추가 폼과 동일).
+  const setDraftV = (d: Draft) => {
+    setDraft(d)
+    setErrors((prev) => {
+      if (!prev.size) return prev
+      const still = requiredMissing(d)
+      return new Set([...prev].filter((f) => still.has(f)))
+    })
+  }
+
   const save = () => {
+    // 추가 폼과 동일하게 필수 항목(완료=성적·학기 포함)이 비어 있으면 저장 차단.
+    const missing = requiredMissing(draft)
+    if (missing.size) {
+      // 빨간 강조·안내는 유지한 채(비우면 빈 프레임이 깜빡임) 흔들림만 리플로우로 재생.
+      flushSync(() => setErrors(missing))
+      replayShake(fieldsRef.current)
+      return
+    }
     const payload = toPayload(draft)
     if (payload) onSave(payload)
   }
   return (
     <Modal onClose={onClose}>
       <h2 className="card-title">과목 수정</h2>
-      <div style={{ marginTop: 12 }}>
-        <CourseFields draft={draft} setDraft={setDraft} spec={spec} showToggle />
+      <div ref={fieldsRef} style={{ marginTop: 12 }}>
+        <CourseFields draft={draft} setDraft={setDraftV} spec={spec} errors={errors} showToggle />
       </div>
+      {errors.size > 0 && (
+        <p className="form-error-msg">비어 있는 필수 항목을 입력해 주세요.</p>
+      )}
       <div className="mt-4 flex gap-2">
         <button onClick={save} className="btn btn-primary" style={{ flex: 1 }}>
           저장
@@ -752,14 +778,16 @@ function CompleteSemesterModal({
     Object.fromEntries(courses.map((c) => [c.id, c.grade ?? ''])),
   )
   const [errorIds, setErrorIds] = useState<Set<string>>(new Set())
+  const listRef = useRef<HTMLUListElement | null>(null)
   const title = semester === '미입력' ? '학기 미입력' : semLabelLong(semester)
 
   const submit = () => {
     const missing = courses.filter((c) => !grades[c.id]).map((c) => c.id)
     if (missing.length > 0) {
-      // 미입력 과목 강조(흔들림) — 재시도마다 다시 애니메이션이 보이도록 잠깐 비웠다 채움
-      setErrorIds(new Set())
-      requestAnimationFrame(() => setErrorIds(new Set(missing)))
+      // 빨간 강조·안내는 유지한 채(비우면 빈 프레임이 깜빡임) 흔들림만 리플로우로 재생.
+      // flushSync로 .field-error를 먼저 커밋해야 재시작 대상 요소가 DOM에 존재한다.
+      flushSync(() => setErrorIds(new Set(missing)))
+      replayShake(listRef.current)
       return
     }
     onConfirm(courses.map((c) => ({ id: c.id, grade: grades[c.id] })))
@@ -769,7 +797,7 @@ function CompleteSemesterModal({
     <Modal onClose={onClose}>
       <h2 className="card-title">{title} 수강 완료</h2>
       <p className="card-sub">각 과목 성적을 모두 입력해야 이수로 옮길 수 있어요.</p>
-      <ul style={{ marginTop: 12 }}>
+      <ul ref={listRef} style={{ marginTop: 12 }}>
         {courses.map((c) => (
           <li key={c.id} className="list-row">
             <div className="row-main">

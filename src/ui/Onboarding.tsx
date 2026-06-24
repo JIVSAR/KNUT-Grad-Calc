@@ -138,7 +138,6 @@ export function Onboarding() {
             </svg>
             <span>
               업로드한 성적표·개인정보는 <b>이 기기(브라우저)에만</b> 저장돼요.
-              <br />
               서버로 전송되지 않습니다.
             </span>
           </p>
