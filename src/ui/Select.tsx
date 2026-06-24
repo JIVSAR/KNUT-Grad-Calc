@@ -30,14 +30,39 @@ export function Select({
   style?: CSSProperties
 }) {
   const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null)
+  const [pos, setPos] = useState<{
+    up: boolean
+    top?: number
+    bottom?: number
+    left: number
+    width: number
+    maxHeight: number
+  } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLUListElement>(null)
   const selected = options.find((o) => o.value === value)
 
   const openMenu = () => {
     const r = triggerRef.current?.getBoundingClientRect()
-    if (r) setPos({ top: r.bottom + 6, left: r.left, width: r.width })
+    if (r) {
+      const gap = 6 // 트리거와 메뉴 사이 간격
+      const margin = 8 // 뷰포트 가장자리 여백
+      const vh = window.innerHeight
+      const below = vh - r.bottom - gap - margin // 아래로 펼칠 때 쓸 수 있는 높이
+      const above = r.top - gap - margin // 위로 펼칠 때 쓸 수 있는 높이
+      // 고정 모달에선 페이지 스크롤이 없어, 아래 공간이 부족하고 위가 더 넓으면 위로 펼쳐 잘림을 막는다.
+      const up = below < 240 && above > below
+      const space = up ? above : below
+      setPos({
+        up,
+        top: up ? undefined : r.bottom + gap,
+        bottom: up ? vh - r.top + gap : undefined,
+        left: r.left,
+        width: r.width,
+        // 남은 공간에 맞춰 높이를 제한(고정 260px 대신) → 넘치는 옵션은 메뉴 내부 스크롤로.
+        maxHeight: Math.max(120, Math.min(260, space)),
+      })
+    }
     setOpen(true)
   }
 
@@ -99,7 +124,14 @@ export function Select({
             ref={menuRef}
             className="select-menu slim-scroll"
             role="listbox"
-            style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width }}
+            style={{
+              position: 'fixed',
+              ...(pos.up ? { bottom: pos.bottom } : { top: pos.top }),
+              left: pos.left,
+              width: pos.width,
+              maxHeight: pos.maxHeight,
+              transformOrigin: pos.up ? 'bottom' : 'top',
+            }}
           >
             {options.map((o) => (
               <li
