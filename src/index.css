@@ -106,6 +106,10 @@ body {
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
   min-height: 100dvh;
+  /* 한국어는 띄어쓰기 단위로만 줄바꿈(단어 중간 끊김 방지) + 긴 토큰은 넘침 방지.
+     좁은 화면에서 '졸업학점'이 '졸업학/점'으로 쪼개지던 문제 해결(전 텍스트 상속). */
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 /* ===================== 레이아웃 셸 ===================== */
