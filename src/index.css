@@ -29,6 +29,8 @@
   --chip-bg: rgba(124, 111, 240, 0.1);
   --ok-bg: rgba(93, 212, 196, 0.16);
   --ok-ink: #11947f;
+  --plan-bg: rgba(255, 176, 90, 0.18);
+  --plan-ink: #b06c10;
   --warn-bg: rgba(255, 158, 196, 0.2);
   --warn-ink: #d6477f;
   --mute-bg: rgba(138, 130, 152, 0.14);
@@ -70,6 +72,8 @@
   --chip-bg: rgba(169, 156, 255, 0.14);
   --ok-bg: rgba(116, 230, 214, 0.16);
   --ok-ink: #74e6d6;
+  --plan-bg: rgba(255, 199, 143, 0.16);
+  --plan-ink: #ffc78f;
   --warn-bg: rgba(255, 175, 208, 0.18);
   --warn-ink: #ffafd0;
   --mute-bg: rgba(140, 132, 164, 0.18);
@@ -496,7 +500,8 @@ button.check-item:active { transform: scale(0.99); }
 }
 .course-chips span.on { background: var(--ok-bg); color: var(--ok-ink); }
 .course-chips span.off { background: var(--mute-bg); color: var(--mute-ink); }
-.course-chips span.planned { background: var(--chip-bg); color: var(--p1); }
+.course-chips span.enrolled { background: var(--chip-bg); color: var(--p1); }
+.course-chips span.planned { background: var(--plan-bg); color: var(--plan-ink); }
 .course-chips span svg { width: 12px; height: 12px; }
 
 .note-warn {

@@ -21,7 +21,9 @@ export interface AreaResult {
 export interface RequiredCourseResult {
   name: string
   taken: boolean
-  /** 아직 미취득이나 예정 또는 수강중인 상태(진행중) */
+  /** 미취득이고 수강중(enrolled)인 상태 */
+  enrolled: boolean
+  /** 미취득이고, 수강중도 아니며, 수강 계획(planned)에만 있는 상태 */
   planned: boolean
 }
 
@@ -145,16 +147,18 @@ export function evaluate(
   const gpaSatisfied = gpa >= spec.gpaMin
 
   const earnedNames = earnedCourses.map((c) => normalize(c.name))
-  const inProgressNames = courses
-    .filter((c) => c.planned || c.enrolled)
-    .map((c) => normalize(c.name))
+  const enrolledNames = courses.filter((c) => c.enrolled).map((c) => normalize(c.name))
+  const plannedNames = courses.filter((c) => c.planned).map((c) => normalize(c.name))
   const requiredCourses: RequiredCourseResult[] = spec.requiredCourses.map((rc) => {
     const target = normalize(rc.name)
     const taken = earnedNames.some((n) => n === target)
+    // 수강중을 계획보다 우선(둘 다 있으면 '수강중'으로 표시)
+    const enrolled = !taken && enrolledNames.some((n) => n === target)
     return {
       name: rc.name,
       taken,
-      planned: !taken && inProgressNames.some((n) => n === target),
+      enrolled,
+      planned: !taken && !enrolled && plannedNames.some((n) => n === target),
     }
   })
   const requiredCoursesSatisfied = requiredCourses.every((r) => r.taken)

@@ -32,6 +32,12 @@ const IcClock = (
     <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
+const IcCalendar = (
+  <svg viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" strokeWidth="2" />
+    <path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+)
 const IcStar = (
   <svg viewBox="0 0 24 24" fill="none">
     <path
@@ -303,10 +309,10 @@ export default function Dashboard() {
             </div>
             <div className="course-chips">
               {r.requiredCourses.map((c) => {
-                const cls = c.taken ? 'on' : c.planned ? 'planned' : 'off'
+                const cls = c.taken ? 'on' : c.enrolled ? 'enrolled' : c.planned ? 'planned' : 'off'
                 return (
                   <span className={cls} key={c.name}>
-                    {c.taken ? IcCheck : c.planned ? IcClock : IcX}
+                    {c.taken ? IcCheck : c.enrolled ? IcClock : c.planned ? IcCalendar : IcX}
                     {c.name}
                   </span>
                 )
