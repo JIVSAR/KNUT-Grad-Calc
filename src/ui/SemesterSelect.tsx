@@ -32,7 +32,7 @@ export function SemesterSelect({
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1">
       <Select
         style={{ flex: 1 }}
         ariaLabel="학년 선택"

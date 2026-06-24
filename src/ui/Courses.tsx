@@ -517,7 +517,10 @@ function CourseFields({
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div
+        className="grid gap-2 tight-selects"
+        style={{ gridTemplateColumns: inProgress ? '1fr' : 'minmax(0, 1fr) minmax(0, 0.42fr)' }}
+      >
         <div className="field-label">
           학기
           <SemesterSelect

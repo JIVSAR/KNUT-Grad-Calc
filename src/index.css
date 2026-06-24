@@ -694,6 +694,9 @@ select.field { appearance: none; -webkit-appearance: none; background-image: non
 .ext-link svg { width: 12px; height: 12px; }
 .select-caret { width: 18px; height: 18px; color: var(--ink-faint); flex-shrink: 0; transition: transform 0.18s ease; }
 .select-caret.open { transform: rotate(180deg); }
+/* 학기/성적 행: 좁은 화면에서 '여름학기'(4글자)도 들어가도록 셀렉트 좌우 여백·캐럿 축소 */
+.tight-selects .select-trigger { padding-left: 8px; padding-right: 8px; }
+.tight-selects .select-caret { width: 16px; }
 .select-menu {
   z-index: 200;
   margin: 0;
