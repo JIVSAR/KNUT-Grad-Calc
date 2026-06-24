@@ -633,7 +633,7 @@ button.check-item:active { transform: scale(0.99); }
 .field::placeholder { color: var(--ink-faint); }
 .field:focus { border-color: var(--p1); box-shadow: 0 0 0 3px var(--chip-bg); }
 select.field { appearance: none; -webkit-appearance: none; background-image: none; cursor: pointer; }
-.field-label { display: block; font-size: 11.5px; font-weight: 700; color: var(--ink-faint); }
+.field-label { display: block; min-width: 0; font-size: 11.5px; font-weight: 700; color: var(--ink-faint); }
 .field-label .field,
 .field-label > select,
 .field-label > input { margin-top: 5px; }
@@ -672,11 +672,12 @@ select.field { appearance: none; -webkit-appearance: none; background-image: non
   .ub-file-btn { transition: none; }
 }
 /* 커스텀 셀렉트 (네이티브 드롭다운 대체 — 글래스 테마 일치) */
-.select { position: relative; }
+.select { position: relative; min-width: 0; }
 .select-trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-width: 0;
   gap: 8px;
   text-align: left;
 }

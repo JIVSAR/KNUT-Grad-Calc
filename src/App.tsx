@@ -101,9 +101,9 @@ function MainShell() {
                 strokeLinejoin="round"
               />
             </svg>
-            졸업까지 함께
+            국립한국교통대학교
           </span>
-          <h1>국립한국교통대학교 졸업학점 계산기</h1>
+          <h1>졸업학점 계산기</h1>
           <p className="app-sub">
             {spec.program} · {shortYearLabel(spec.admissionYear)}
           </p>
