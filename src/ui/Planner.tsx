@@ -9,6 +9,8 @@ import { Select } from './Select'
 import { ConfirmModal } from './ConfirmModal'
 import { Modal } from './Modal'
 import { replayShake } from '../lib/replayShake'
+import { retakeEligible, gradeScore } from '../engine/dedup'
+import { buildGradeMap } from '../engine/gpa'
 import type { Course } from '../types'
 
 export default function Planner() {
@@ -294,32 +296,44 @@ export default function Planner() {
         />
       )}
 
-      {pendingDup && (
-        <Modal onClose={() => setPendingDup(null)} maxWidth={380}>
-          <h2 className="card-title">재수강 처리</h2>
-          <p className="card-sub" style={{ fontSize: 13.5, color: 'var(--ink-soft)' }}>
-            이미 이수한 「{pendingDup.payload.name}」 과목이 있어요. 이번에 추가하는 과목을 <b>재수강</b>으로
-            처리할까요? (재수강은 이미 받은 학점이라 남은 학점에 반영되지 않아요)
-          </p>
-          <div className="mt-4" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button onClick={confirmRetake} className="btn btn-primary btn-block">
-              재수강으로 추가
-            </button>
-            <div className="flex gap-2">
-              <button onClick={justAdd} className="btn btn-ghost" style={{ flex: 1 }}>
-                그냥 추가
-              </button>
-              <button
-                onClick={() => setPendingDup(null)}
-                className="btn"
-                style={{ flex: 1, color: '#e24b6a', border: '1px solid #e24b6a', background: 'transparent' }}
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
+      {pendingDup &&
+        (() => {
+          const gradeMap = buildGradeMap(spec)
+          const eligible = retakeEligible(pendingDup.dupes, gradeMap)
+          const bestDupe = pendingDup.dupes.reduce((a, b) =>
+            gradeScore(b.grade, gradeMap) > gradeScore(a.grade, gradeMap) ? b : a,
+          )
+          return (
+            <Modal onClose={() => setPendingDup(null)} maxWidth={380}>
+              <h2 className="card-title">{eligible ? '재수강 처리' : '중복 과목 확인'}</h2>
+              <p className="card-sub" style={{ fontSize: 13.5, color: 'var(--ink-soft)' }}>
+                이미 이수한 「{pendingDup.payload.name}」 과목이 있어요.{' '}
+                {eligible
+                  ? '이번에 추가하는 과목을 재수강으로 처리할까요? (재수강은 이미 받은 학점이라 남은 학점에 반영되지 않아요)'
+                  : `기존 성적이 ${bestDupe.grade || '미입력'}(B0 이상)이라 재수강 대상이 아니에요. 그래도 추가할까요?`}
+              </p>
+              <div className="mt-4" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {eligible && (
+                  <button onClick={confirmRetake} className="btn btn-primary btn-block">
+                    재수강으로 추가
+                  </button>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={justAdd} className="btn btn-ghost" style={{ flex: 1 }}>
+                    그냥 추가
+                  </button>
+                  <button
+                    onClick={() => setPendingDup(null)}
+                    className="btn"
+                    style={{ flex: 1, color: '#e24b6a', border: '1px solid #e24b6a', background: 'transparent' }}
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </Modal>
+          )
+        })()}
     </div>
   )
 }

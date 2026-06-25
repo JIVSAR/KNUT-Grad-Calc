@@ -11,6 +11,8 @@ import { Modal } from './Modal'
 import { UploadBox } from './UploadBox'
 import { flushSync } from 'react-dom'
 import { replayShake } from '../lib/replayShake'
+import { retakeEligible, capRetakeGrade, gradeScore } from '../engine/dedup'
+import { buildGradeMap } from '../engine/gpa'
 import type { Course } from '../types'
 import type { RequirementSpec } from '../data/requirements/types'
 
@@ -389,33 +391,51 @@ export default function Courses() {
         </Modal>
       )}
 
-      {pendingDup && (
-        <Modal onClose={() => setPendingDup(null)} maxWidth={380}>
-          <h2 className="card-title">재수강 처리</h2>
-          <p className="card-sub" style={{ fontSize: 13.5, color: 'var(--ink-soft)' }}>
-            {[...new Set(pendingDup.dupes.map((c) => (c.semester ? semLabelLong(c.semester) : '학기 미입력')))].join(', ')}
-            에 「{pendingDup.payload.name}」 과목이 이미 있어요. 이번에 추가하는 과목을 <b>재수강</b>으로
-            처리할까요? (기존 과목은 학점·평점에서 제외돼요)
-          </p>
-          <div className="mt-4" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button onClick={confirmRetake} className="btn btn-primary btn-block">
-              재수강 처리
-            </button>
-            <div className="flex gap-2">
-              <button onClick={justAdd} className="btn btn-ghost" style={{ flex: 1 }}>
-                그냥 추가
-              </button>
-              <button
-                onClick={() => setPendingDup(null)}
-                className="btn"
-                style={{ flex: 1, color: '#e24b6a', border: '1px solid #e24b6a', background: 'transparent' }}
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
+      {pendingDup &&
+        (() => {
+          const gradeMap = buildGradeMap(spec)
+          const eligible = retakeEligible(pendingDup.dupes, gradeMap)
+          const bestDupe = pendingDup.dupes.reduce((a, b) =>
+            gradeScore(b.grade, gradeMap) > gradeScore(a.grade, gradeMap) ? b : a,
+          )
+          const willCap =
+            eligible &&
+            capRetakeGrade(pendingDup.payload.grade, spec.gradeScale) !== pendingDup.payload.grade
+          return (
+            <Modal onClose={() => setPendingDup(null)} maxWidth={380}>
+              <h2 className="card-title">{eligible ? '재수강 처리' : '중복 과목 확인'}</h2>
+              <p className="card-sub" style={{ fontSize: 13.5, color: 'var(--ink-soft)' }}>
+                {[...new Set(pendingDup.dupes.map((c) => (c.semester ? semLabelLong(c.semester) : '학기 미입력')))].join(', ')}
+                에 「{pendingDup.payload.name}」 과목이 이미 있어요.{' '}
+                {eligible
+                  ? '이번에 추가하는 과목을 재수강으로 처리할까요? (기존 과목은 학점·평점에서 제외돼요)'
+                  : `기존 성적이 ${bestDupe.grade || '미입력'}(B0 이상)이라 재수강 대상이 아니에요. 그래도 추가할까요?`}
+              </p>
+              {willCap && (
+                <p className="note-warn">재수강 취득 성적은 A0까지 인정돼요 — A0로 저장됩니다.</p>
+              )}
+              <div className="mt-4" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {eligible && (
+                  <button onClick={confirmRetake} className="btn btn-primary btn-block">
+                    재수강 처리
+                  </button>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={justAdd} className="btn btn-ghost" style={{ flex: 1 }}>
+                    그냥 추가
+                  </button>
+                  <button
+                    onClick={() => setPendingDup(null)}
+                    className="btn"
+                    style={{ flex: 1, color: '#e24b6a', border: '1px solid #e24b6a', background: 'transparent' }}
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </Modal>
+          )
+        })()}
 
       {deletingCourse && (
         <ConfirmModal
@@ -770,7 +790,7 @@ function CompleteSemesterModal({
   semester: string
   courses: Course[]
   catLabel: (id: string) => string
-  gradeScale: { grade: string }[]
+  gradeScale: { grade: string; points: number }[]
   onConfirm: (updates: { id: string; grade: string }[]) => void
   onClose: () => void
 }) {
@@ -804,6 +824,7 @@ function CompleteSemesterModal({
               <p className="row-title">{c.name}</p>
               <p className="row-sub">
                 {catLabel(c.categoryId)} · {c.credits}학점
+                {c.retaking && ' · 재수강(A0까지)'}
               </p>
             </div>
             <Select
@@ -821,7 +842,10 @@ function CompleteSemesterModal({
                     return n
                   })
               }}
-              options={gradeScale.map((g) => ({ value: g.grade, label: g.grade }))}
+              // 재수강 과목은 A0 상한 → 선택지에서 A+(4.0 초과) 제외
+              options={gradeScale
+                .filter((g) => !c.retaking || g.points <= 4.0)
+                .map((g) => ({ value: g.grade, label: g.grade }))}
             />
           </li>
         ))}

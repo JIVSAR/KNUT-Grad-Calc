@@ -13,7 +13,7 @@ import { applyOverrides, type Overrides } from '../data/requirements/overrides'
 import { serializeBackup, parseBackup } from './backup'
 import { mergeImportedTranscript, mergeImportedEnrollment } from '../import/merge'
 import { buildGradeMap } from '../engine/gpa'
-import { bestGradeId } from '../engine/dedup'
+import { bestGradeId, capRetakeGrade } from '../engine/dedup'
 
 const newId = (): string =>
   typeof crypto !== 'undefined' && crypto.randomUUID
@@ -99,8 +99,10 @@ export const useStore = create<AppState>()(
       addCourseRetaking: (c, retakeIds) =>
         set((s) => {
           // 재수강: 원 과목과 새 과목 중 '더 높은 성적'만 유효, 나머지는 대체(retake)로 표시.
-          const gradeMap = buildGradeMap(get().activeSpec())
-          const added = { ...c, id: newId() }
+          // 재수강 취득 성적은 A0 상한(A+는 A0로 낮춤).
+          const spec = get().activeSpec()
+          const gradeMap = buildGradeMap(spec)
+          const added = { ...c, grade: capRetakeGrade(c.grade, spec.gradeScale), id: newId() }
           const group = [added, ...s.courses.filter((x) => retakeIds.includes(x.id))]
           const topId = bestGradeId(group, gradeMap)
           const superseded = new Set(group.filter((x) => x.id !== topId).map((x) => x.id))

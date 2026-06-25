@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { evaluate } from './calc'
 import { computeGpa, buildGradeMap } from './gpa'
-import { getSuperseded, gradeScore, bestGradeId } from './dedup'
+import { getSuperseded, gradeScore, bestGradeId, retakeEligible, capRetakeGrade } from './dedup'
 import { cs2024 } from '../data/requirements/cs2024'
 import type { Course } from '../types'
 
@@ -110,5 +110,46 @@ describe('재수강 최고 성적 판정 (gradeScore / bestGradeId)', () => {
     expect(computeGpa(courses, cs2024).gpa).toBeCloseTo(2.5, 5) // C+
     expect(computeGpa(courses, cs2024).gpaCredits).toBe(3) // 1회만
     expect(major(evaluate(courses, cs2024)).earned).toBe(3) // 학점 1회
+  })
+})
+
+describe('재수강 cap — 자격(C+ 이하) · 취득 상한(A0)', () => {
+  const gm = buildGradeMap(cs2024)
+  const dupe = (grade: string): Course => ({
+    id: 'd',
+    name: '자료구조',
+    credits: 3,
+    categoryId: 'majorElec',
+    grade,
+  })
+
+  it('자격 있음: 원 성적 C+ 이하(C+·C0·D0·F)', () => {
+    expect(retakeEligible([dupe('C+')], gm)).toBe(true)
+    expect(retakeEligible([dupe('C0')], gm)).toBe(true)
+    expect(retakeEligible([dupe('D0')], gm)).toBe(true)
+    expect(retakeEligible([dupe('F')], gm)).toBe(true)
+  })
+
+  it('자격 없음: 원 성적 B0 이상(B0·B+·A0·A+)', () => {
+    expect(retakeEligible([dupe('B0')], gm)).toBe(false)
+    expect(retakeEligible([dupe('B+')], gm)).toBe(false)
+    expect(retakeEligible([dupe('A0')], gm)).toBe(false)
+    expect(retakeEligible([dupe('A+')], gm)).toBe(false)
+  })
+
+  it('자격 판정은 최고 성적 기준 (C+·B+ 보유 → 자격 없음)', () => {
+    expect(retakeEligible([dupe('C+'), dupe('B+')], gm)).toBe(false)
+  })
+
+  it('빈 목록 → 자격 없음', () => {
+    expect(retakeEligible([], gm)).toBe(false)
+  })
+
+  it('상한: A+는 A0로 낮춤, A0 이하는 그대로', () => {
+    expect(capRetakeGrade('A+', cs2024.gradeScale)).toBe('A0')
+    expect(capRetakeGrade('A0', cs2024.gradeScale)).toBe('A0')
+    expect(capRetakeGrade('B+', cs2024.gradeScale)).toBe('B+')
+    expect(capRetakeGrade('C0', cs2024.gradeScale)).toBe('C0')
+    expect(capRetakeGrade('F', cs2024.gradeScale)).toBe('F')
   })
 })

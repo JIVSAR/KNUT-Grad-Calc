@@ -59,3 +59,24 @@ export function getSuperseded(
   }
   return out
 }
+
+/** 재수강 규칙(학칙): 자격=원 성적 C+(2.5) 이하, 취득 상한=A0(4.0). */
+export const RETAKE_ELIGIBLE_MAX_POINTS = 2.5
+export const RETAKE_GRADE_CAP_POINTS = 4.0
+
+/** 재수강 자격: 같은 과목의 기존(유효) 성적 중 최고가 C+ 이하(또는 F)면 재수강 가능. B0 이상이면 대상 아님. */
+export function retakeEligible(dupes: Course[], gradeMap: Map<string, GradePoint>): boolean {
+  if (dupes.length === 0) return false
+  const best = Math.max(...dupes.map((c) => gradeScore(c.grade, gradeMap)))
+  return best <= RETAKE_ELIGIBLE_MAX_POINTS
+}
+
+/** 재수강 취득 성적 상한(A0). 상한을 넘는 성적(A+)은 4.0 이하 최고 등급(A0)으로 낮춘다. */
+export function capRetakeGrade(grade: string, gradeScale: GradePoint[]): string {
+  const g = gradeScale.find((x) => x.grade === grade)
+  if (!g || g.points <= RETAKE_GRADE_CAP_POINTS) return grade
+  const capped = gradeScale
+    .filter((x) => x.points <= RETAKE_GRADE_CAP_POINTS)
+    .reduce((a, b) => (b.points > a.points ? b : a))
+  return capped.grade
+}
