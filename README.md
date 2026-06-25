@@ -3,7 +3,7 @@
 한국교통대학교 학생이 **졸업 진행 상황**과 **다음 학기 수강 계획**을 휴대폰에서 한눈에 확인하는 PWA.
 1차 대상: 충주캠퍼스 **컴퓨터공학과 2024학번** (요건을 데이터로 분리해 전 학과 확장 가능 구조).
 
-**🔗 라이브 데모: https://knut-grad-clac.vercel.app** — 폰으로 접속 후 "홈 화면에 추가"하면 앱처럼 쓸 수 있어요.
+**🔗 라이브 데모: https://knut-grad-calc.vercel.app** — 폰으로 접속 후 "홈 화면에 추가"하면 앱처럼 쓸 수 있어요.
 
 > 만든 이유: 매 학기 "졸업까지 몇 학점/어떤 과목을 더 들어야 하나"를 손으로 계산하기 귀찮아서.
 > 성적표만 올리면 자동 집계되고, 남은 학기 계획을 짜면 학기별로 남는 학점이 자동 계산된다.
@@ -52,7 +52,7 @@ npm run build    # 프로덕션 빌드 → dist/
 ```
 
 ## 배포
-**🚀 라이브: https://knut-grad-clac.vercel.app** — Vercel(Vite 자동 감지, build `npm run build` / output `dist`). `main`에 push하면 자동 재배포.
+**🚀 라이브: https://knut-grad-calc.vercel.app** — Vercel(Vite 자동 감지, build `npm run build` / output `dist`). `main`에 push하면 자동 재배포.
 - 백엔드·DB 없는 **정적 PWA** + 데이터는 기기 localStorage에만 저장 → 성적표·개인정보가 서버로 전송되지 않음.
 - 폰 브라우저로 접속 → "홈 화면에 추가"로 앱처럼 설치/오프라인 사용.
 

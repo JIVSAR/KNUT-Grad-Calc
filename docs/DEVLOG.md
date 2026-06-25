@@ -1,7 +1,7 @@
 # 개발 로그 · 트러블슈팅 기록 (KNUT 졸업학점 계산기)
 
 > 포트폴리오 원천 자료. 각 항목은 **증상 → 원인 → 해결 → 검증** 형식으로, 실제 디버깅/설계 과정을 기록한다.
-> 작성 시점: 2026-06-23(섹션 0~5) → 2026-06-24 2차 세션(섹션 6) → 2026-06-25 3차 세션(섹션 7) + 🚀 Vercel 배포 → **2026-06-25 4차 세션(섹션 8) — 실폰 UI 정밀화·깜빡임 제거·필수과목 칩 분리**. 테스트 43 → 54 → **61개** 통과 · 타입체크/빌드 정상 · 라이브 https://knut-grad-clac.vercel.app
+> 작성 시점: 2026-06-23(섹션 0~5) → 2026-06-24 2차 세션(섹션 6) → 2026-06-25 3차 세션(섹션 7) + 🚀 Vercel 배포 → **2026-06-25 4차 세션(섹션 8) — 실폰 UI 정밀화·깜빡임 제거·필수과목 칩 분리·재수강 cap**. 테스트 43 → 54 → **66개** 통과 · 타입체크/빌드 정상 · 라이브 https://knut-grad-calc.vercel.app
 
 ## 0. 프로젝트 한눈에
 한국교통대 학생이 **졸업 진행 상황 + 다음 학기 수강 계획**을 휴대폰에서 보는 PWA.
@@ -243,7 +243,7 @@
 - **폼 셀렉트 겹침**: 과목 추가/수정의 학기·성적 셀렉트가 좁은 화면에서 겹침. 원인: flex/grid 자식 기본 `min-width:auto`라 내용보다 못 줄어 칸 넘침 — 그리고 **flex 아이템이 트리거가 아니라 `.select` 래퍼**임을 rect 측정으로 발견. → `.select`·`.field-label`·`.select-trigger`에 `min-width:0`. 이어 칸 비율 조정(학기↑·성적↓ `minmax(0,1fr) minmax(0,0.42fr)`)+`.tight-selects`(패딩/캐럿 축소)로 '여름학기'(4글자) 수용. **검증**(`preview_resize`+rect/scrollWidth 측정): 360px+ 겹침·잘림 0(폼·모달), 320px만 4글자 학기·placeholder 살짝 잘림.
 
 ### 7.6 배포 (Vercel)
-- `public/mockups*` 삭제 → `git init`(main) → `.gitignore`에 `CLAUDE.md`·`.claude/` 추가(AI 흔적 비공개) → 첫 커밋(작성자 JIVSAR<gnusoda@naver.com>·co-author 표기 없음) → GitHub 공개 레포 `JIVSAR/KNUT-Grad-Calc` → Vercel(Vite 자동감지, build `npm run build`/output `dist`) → 라이브 **https://knut-grad-clac.vercel.app**. `git push`→자동 재배포. manifest/start_url(`/`)·PWA 설치 점검 통과. `npm audit` 0건·xlsx 0.20.3(안전 버전). gh CLI 미설치(레포 웹 생성), 2FA 설정됨.
+- `public/mockups*` 삭제 → `git init`(main) → `.gitignore`에 `CLAUDE.md`·`.claude/` 추가(AI 흔적 비공개) → 첫 커밋(작성자 JIVSAR<gnusoda@naver.com>·co-author 표기 없음) → GitHub 공개 레포 `JIVSAR/KNUT-Grad-Calc` → Vercel(Vite 자동감지, build `npm run build`/output `dist`) → 라이브 **https://knut-grad-calc.vercel.app**. `git push`→자동 재배포. manifest/start_url(`/`)·PWA 설치 점검 통과. `npm audit` 0건·xlsx 0.20.3(안전 버전). gh CLI 미설치(레포 웹 생성), 2FA 설정됨.
 - 보안 구조 설명: 백엔드/DB 없는 정적 PWA + 데이터는 기기 localStorage에만(서버 전송 0 — 코드로 확인) → 개인정보 대량 유출·서버 해킹이 구조상 불가. 잔여 리스크는 계정 2FA·의존성 업데이트 수준.
 
 ### 7.7 검증 방법론 (이 세션 보강)
