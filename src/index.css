@@ -573,6 +573,11 @@ button.check-item:active { transform: scale(0.99); }
 }
 .reveal { opacity: 0; animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 .tab-page { animation: fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+/* GPA 카드 누름(press) 효과. .reveal은 카드에 그대로 둬 GPU 레이어가 안정(backdrop 정상)하고,
+   press만 :active로 더한다. .reveal의 fadeUp이 transform을 none으로 고정(forwards)하므로
+   :active는 !important로 우선 적용해야 눌림이 보인다(important > animation). */
+.gpa-press { transition: transform 0.12s ease; }
+.gpa-press:active { transform: scale(0.98) !important; }
 
 /* 과목 행 '도착' 등장 — 상태 전환 시 새 구역에 슬라이드+하이라이트(팝)로 나타남 */
 @keyframes rowArrive {

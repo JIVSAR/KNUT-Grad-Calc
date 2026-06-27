@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useStore } from '../state/store'
 import { useActiveSpec, useEvaluation } from '../state/hooks'
 import { ProgressBar } from './ProgressBar'
 import { Ring } from './Ring'
 import { useCountUp } from '../lib/useCountUp'
+import { computeGpa } from '../engine/gpa'
 import { currentCurriculumYear } from '../data/requirements/curriculum'
 
 const IcCheck = (
@@ -55,6 +57,7 @@ export default function Dashboard() {
   const r = useEvaluation()
   const toggleNonCredit = useStore((s) => s.toggleNonCredit)
   const completed = useStore((s) => s.completedNonCredit)
+  const courses = useStore((s) => s.courses)
 
   const total = r.areas.find((a) => a.id === 'total')
   const otherAreas = r.areas.filter((a) => a.id !== 'total')
@@ -67,9 +70,20 @@ export default function Dashboard() {
   const reqPct = reqTotal > 0 ? Math.round((reqTaken / reqTotal) * 100) : 0
   const nonCreditDone = r.nonCredit.filter((n) => n.satisfied).length
 
+  // 평점평균 카드: 탭하면 전체 ↔ 전공(전공필수·선택) GPA 전환
+  const [gpaMode, setGpaMode] = useState<'all' | 'major'>('all')
+  const majorCats = new Set(spec.areas.find((a) => a.id === 'majorTotal')?.includes ?? [])
+  const majorGpa = computeGpa(
+    courses.filter((c) => majorCats.has(c.categoryId)),
+    spec,
+  )
+  const isMajor = gpaMode === 'major'
+  const shownGpa = isMajor ? majorGpa.gpa : r.gpa
+  const shownCredits = isMajor ? majorGpa.gpaCredits : r.gpaCredits
+
   const heroPct = useCountUp(overall)
   const earnedNum = useCountUp(totalEarned)
-  const gpaNum = useCountUp(r.gpa, 900, 2)
+  const gpaNum = useCountUp(shownGpa, 900, 2)
 
   let d = 0
   const delay = () => ({ animationDelay: `${(d++ * 70)}ms` })
@@ -215,22 +229,39 @@ export default function Dashboard() {
         ))}
       </section>
 
-      {/* GPA */}
-      <section className="glass-card reveal" style={delay()}>
+      {/* GPA — 탭하면 전체 ↔ 전공 평점 전환 (gpa-press: 눌림 효과) */}
+      <section
+        className="glass-card reveal gpa-press"
+        style={{ ...delay(), cursor: 'pointer' }}
+        onClick={() => setGpaMode((m) => (m === 'all' ? 'major' : 'all'))}
+        role="button"
+        tabIndex={0}
+        aria-label={`평점평균 ${isMajor ? '전공' : '전체'} 보기 — 탭하면 전환`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setGpaMode((m) => (m === 'all' ? 'major' : 'all'))
+          }
+        }}
+      >
         <div className="sec-head">
           <span className="ic">{IcStar}</span>
-          <h2>평점평균 (GPA)</h2>
+          <h2>{isMajor ? '전공' : '전체'} 평점평균 (GPA)</h2>
         </div>
         <div className="gpa">
           <div className="score grad-text teal">{gpaNum.toFixed(2)}</div>
           <div className="info">
-            <div className="l1">졸업 기준 {spec.gpaMin} 이상</div>
-            <div className="l2">반영 {r.gpaCredits}학점 · {r.gpaSatisfied ? '기준 충족' : '기준 미달'}</div>
+            <div className="l1">{isMajor ? '전공필수·전공선택 과목' : `졸업 기준 ${spec.gpaMin} 이상`}</div>
+            <div className="l2">
+              반영 {shownCredits}학점{!isMajor && ` · ${r.gpaSatisfied ? '기준 충족' : '기준 미달'}`}
+            </div>
           </div>
-          <span className={`pill-ok${r.gpaSatisfied ? '' : ' warn'}`}>
-            {r.gpaSatisfied ? IcCheck : IcWarn}
-            {r.gpaSatisfied ? '충족' : '미달'}
-          </span>
+          {!isMajor && (
+            <span className={`pill-ok${r.gpaSatisfied ? '' : ' warn'}`}>
+              {r.gpaSatisfied ? IcCheck : IcWarn}
+              {r.gpaSatisfied ? '충족' : '미달'}
+            </span>
+          )}
         </div>
       </section>
 
