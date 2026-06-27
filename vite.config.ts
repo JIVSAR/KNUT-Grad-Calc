@@ -16,7 +16,7 @@ export default defineConfig({
         short_name: '졸업계산기',
         description: '한국교통대 컴퓨터공학과 졸업요건 진행 상황 계산기',
         lang: 'ko',
-        theme_color: '#1d4ed8',
+        theme_color: '#7C6FF0',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
