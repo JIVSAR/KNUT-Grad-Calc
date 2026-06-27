@@ -3,9 +3,9 @@ import { mergeImportedTranscript, mergeImportedEnrollment } from './merge'
 import type { Course } from '../types'
 
 describe('mergeImportedTranscript', () => {
-  it('같은 코드면 동시인정(alsoCounts) 보존, 이수 과목은 새 파일로 교체', () => {
+  it('같은 코드면 이수 과목은 새 성적표로 교체(성적 갱신)', () => {
     const existing: Course[] = [
-      { id: 'x', name: '자료구조', code: '259068', credits: 3, categoryId: 'majorElec', grade: 'C0', alsoCounts: ['kConvergeElec'] },
+      { id: 'x', name: '자료구조', code: '259068', credits: 3, categoryId: 'majorElec', grade: 'C0' },
     ]
     const imported: Course[] = [
       { id: 't0', name: '자료구조', code: '259068', credits: 3, categoryId: 'majorElec', grade: 'A0', planned: false },
@@ -13,7 +13,6 @@ describe('mergeImportedTranscript', () => {
     const { courses, plannedRemoved } = mergeImportedTranscript(existing, imported)
     expect(courses).toHaveLength(1)
     expect(courses[0].grade).toBe('A0') // 새 성적 반영
-    expect(courses[0].alsoCounts).toEqual(['kConvergeElec']) // 수동 설정 보존
     expect(plannedRemoved).toBe(0)
   })
 

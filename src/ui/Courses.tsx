@@ -3,7 +3,6 @@ import { useStore } from '../state/store'
 import { useActiveSpec, useSuperseded } from '../state/hooks'
 import { compareSem, semLabelLong } from '../semester'
 import { SemesterSelect } from './SemesterSelect'
-import { AlsoCountsSelect } from './AlsoCountsSelect'
 import { Select } from './Select'
 import { Collapse } from './Collapse'
 import { ConfirmModal } from './ConfirmModal'
@@ -49,7 +48,6 @@ const emptyDraft = (categoryId = ''): Draft => ({
   retake: false,
   planned: false,
   enrolled: false,
-  alsoCounts: [],
 })
 
 /** 추가/저장 시 비어 있는 필수 항목 키. 완료 과목은 성적까지 필수, 예정/수강중은 성적 제외. */
@@ -75,7 +73,6 @@ function draftFromCourse(c: Course): Draft {
     retake: c.retake ?? false,
     planned: c.planned ?? false,
     enrolled: c.enrolled ?? false,
-    alsoCounts: c.alsoCounts ?? [],
   }
 }
 
@@ -89,7 +86,6 @@ function toPayload(d: Draft): Draft | null {
     semester: d.semester || undefined,
     grade: inProgress ? '' : d.grade,
     retake: inProgress ? false : d.retake,
-    alsoCounts: d.alsoCounts && d.alsoCounts.length ? d.alsoCounts : undefined,
   }
 }
 
@@ -130,7 +126,7 @@ export default function Courses() {
       if (parsed.length) {
         const { added, plannedRemoved } = importTranscript(parsed)
         setMsg(
-          `성적표 ${added}과목 반영 (포함된 학기 갱신 · 다른 학기 이수는 유지 · 동시인정 유지).` +
+          `성적표 ${added}과목 반영 (포함된 학기 갱신 · 다른 학기 이수는 유지).` +
             (plannedRemoved ? ` 성적 나온 학기의 예정/수강중 ${plannedRemoved}과목 정리.` : '') +
             (warnings.length ? ` ${warnings.join(' ')}` : ''),
         )
@@ -565,12 +561,6 @@ function CourseFields({
           </div>
         )}
       </div>
-      <AlsoCountsSelect
-        categories={spec.categories}
-        primary={draft.categoryId}
-        value={draft.alsoCounts ?? []}
-        onChange={(v) => setDraft({ ...draft, alsoCounts: v })}
-      />
       {!inProgress && (
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -764,8 +754,7 @@ function CourseRow({
           {c.name}
         </p>
         <p className="row-sub">
-          {catLabel(c.categoryId)}
-          {c.alsoCounts?.length ? ` +${c.alsoCounts.map(catLabel).join(',')}` : ''} · {c.credits}학점
+          {catLabel(c.categoryId)} · {c.credits}학점
           {c.grade && ` · ${c.grade}`}
         </p>
       </div>

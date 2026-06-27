@@ -4,8 +4,7 @@ const norm = (s: string): string => s.replace(/\s+/g, '').toLowerCase()
 
 /**
  * 성적표 재업로드 병합:
- * - 성적표가 '포함한 학기'의 이수 과목만 새 성적표로 교체(갱신). 같은 교과목코드(없으면 과목명)면
- *   사용자가 설정한 동시인정(alsoCounts)을 보존한다.
+ * - 성적표가 '포함한 학기'의 이수 과목만 새 성적표로 교체(갱신).
  * - 성적표가 '다루지 않는 학기'의 이수완료는 유지한다(예: 수동으로 수강완료한 현재 학기).
  * - 예정·수강중 중 성적이 나온(=성적표 포함) 학기 것은 정리(이제 이수로 들어옴). 미래/다른 학기는 유지.
  */
@@ -13,19 +12,6 @@ export function mergeImportedTranscript(
   existing: Course[],
   imported: Course[],
 ): { courses: Course[]; plannedRemoved: number } {
-  const prevByCode = new Map<string, Course>()
-  const prevByName = new Map<string, Course>()
-  for (const c of existing) {
-    if (c.planned) continue
-    if (c.code) prevByCode.set(c.code, c)
-    prevByName.set(norm(c.name), c)
-  }
-
-  const merged = imported.map((c) => {
-    const prev = (c.code && prevByCode.get(c.code)) || prevByName.get(norm(c.name))
-    return prev?.alsoCounts?.length ? { ...c, alsoCounts: [...prev.alsoCounts] } : c
-  })
-
   // 성적표가 포함한 학기들(= 이미 성적이 나온 학기)
   const coveredSems = new Set(imported.map((c) => c.semester).filter((x): x is string => !!x))
   const importedCodes = new Set(imported.map((c) => c.code).filter((x): x is string => !!x))
@@ -45,7 +31,7 @@ export function mergeImportedTranscript(
     return !covered
   })
 
-  return { courses: [...kept, ...merged], plannedRemoved }
+  return { courses: [...kept, ...imported], plannedRemoved }
 }
 
 /**

@@ -68,16 +68,11 @@ export function isEarned(course: Course, gradeMap: Map<string, GradePoint>): boo
   return !(g && g.fail)
 }
 
-/** 과목이 인정되는 영역(카테고리) 목록: 기본 + 동시 인정(alsoCounts). */
-function courseCats(c: Course): string[] {
-  return c.alsoCounts && c.alsoCounts.length ? [c.categoryId, ...c.alsoCounts] : [c.categoryId]
-}
-
-/** 해당 영역(includes)에 속하는 과목들의 학점 합 (과목당 영역 내 1회). */
+/** 해당 영역(includes)에 속하는 과목들의 학점 합 (과목당 영역 1회). */
 function creditsInArea(courses: Course[], includes: string[]): number {
   const inc = new Set(includes)
   return courses
-    .filter((c) => courseCats(c).some((cat) => inc.has(cat)))
+    .filter((c) => inc.has(c.categoryId))
     .reduce((s, c) => s + c.credits, 0)
 }
 
@@ -118,7 +113,7 @@ export function evaluate(
   // 현재 스펙(학과·다전공)의 어느 영역에도 분류되지 않는 과목(예: 트랙 변경으로 남겨진 과목).
   const knownCats = new Set(spec.categories.map((c) => c.id))
   const unclassified = [...earnedCourses, ...enrolledCourses, ...plannedCourses]
-    .filter((c) => courseCats(c).every((cat) => !knownCats.has(cat)))
+    .filter((c) => !knownCats.has(c.categoryId))
     .map((c) => ({ name: c.name, categoryId: c.categoryId, credits: c.credits }))
 
   const totalEarned = earnedCourses.reduce((s, c) => s + c.credits, 0)

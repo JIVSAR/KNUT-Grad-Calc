@@ -20,6 +20,4 @@ export interface Course {
   planned?: boolean
   /** true면 '수강 중'(현재 학기 진행 중, 성적 미정). 학점·GPA 미반영. */
   enrolled?: boolean
-  /** 동시 인정되는 추가 영역(예: 전공이면서 K-융합). 영역 합계엔 각각 더해지고 총 학점엔 1회만. */
-  alsoCounts?: string[]
 }

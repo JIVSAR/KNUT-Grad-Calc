@@ -4,7 +4,6 @@ import { useStore } from '../state/store'
 import { useActiveSpec, useEvaluation, useProjection } from '../state/hooks'
 import { compareSem, semLabel } from '../semester'
 import { SemesterSelect } from './SemesterSelect'
-import { AlsoCountsSelect } from './AlsoCountsSelect'
 import { Select } from './Select'
 import { ConfirmModal } from './ConfirmModal'
 import { Modal } from './Modal'
@@ -26,7 +25,6 @@ export default function Planner() {
   const [credits, setCredits] = useState(0)
   const [categoryId, setCategoryId] = useState('')
   const [semester, setSemester] = useState('')
-  const [alsoCounts, setAlsoCounts] = useState<string[]>([])
   const [errors, setErrors] = useState<Set<string>>(new Set())
   const addFormRef = useRef<HTMLDivElement | null>(null)
   const clearErr = (f: string) =>
@@ -61,7 +59,6 @@ export default function Planner() {
     setCredits(0)
     setCategoryId('')
     setSemester('')
-    setAlsoCounts([])
     setErrors(new Set())
   }
 
@@ -86,7 +83,6 @@ export default function Planner() {
       semester,
       planned: mode === 'planned',
       enrolled: mode === 'enrolled',
-      alsoCounts: alsoCounts.length ? alsoCounts : undefined,
     }
     // 이미 '이수(합격)'한 같은 이름 과목이 있으면 재수강 여부를 먼저 묻는다(낙제 과목 재수강은 새 학점이므로 제외).
     const dupes = courses.filter(
@@ -191,12 +187,6 @@ export default function Planner() {
             }}
             years={[1, 2, 3, 4, 5]}
             error={errors.has('semester')}
-          />
-          <AlsoCountsSelect
-            categories={spec.categories}
-            primary={categoryId}
-            value={alsoCounts}
-            onChange={setAlsoCounts}
           />
         </div>
         {errors.size > 0 && (

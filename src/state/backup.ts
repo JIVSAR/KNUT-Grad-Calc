@@ -34,7 +34,6 @@ export function parseBackup(json: string): BackupData {
       grade: String(c.grade ?? ''),
     }
     if (c.code) course.code = String(c.code)
-    if (Array.isArray(c.alsoCounts)) course.alsoCounts = c.alsoCounts.map(String)
     if (c.semester) course.semester = String(c.semester)
     if (c.retake) course.retake = true
     if (c.retaking) course.retaking = true
