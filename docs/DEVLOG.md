@@ -330,8 +330,31 @@
 
 ---
 
-## 10. 남은 일 (새 세션 인수인계)
-> 5차 세션까지 동시인정 제거·전공 GPA 토글·press·포트폴리오 일단락. 아래는 다음 후보.
+## 10. 6차 세션 (2026-06-28) — 앱 아이콘 리디자인 · theme_color · Dependabot
+
+> 밋밋하던 앱 아이콘을 "고연봉 디자이너 느낌"의 새 디자인으로 교체 + PWA `theme_color` 보라 통일 + Dependabot 보안 경보 설정(사용자). 시안은 인라인 SVG로 여러 컨셉을 비교해 사용자가 '입체 졸업모자(그림자)' 선택.
+
+### 10.1 앱 아이콘 전면 교체 (졸업모자 · 보라 · 입체)
+- 동기: 기존 아이콘(`#1d4ed8` 단색 사각 + 흰 삼각 선화)이 밋밋 + 파랑이라 보라 디자인과 불일치.
+- 선정 과정: 인라인 SVG 시안으로 라운드 계열(반짝이·컨페티·광채) → 프리미엄 계열(입체+그림자·네거티브스페이스·기하 듀오톤) 비교. 사용자가 **입체 졸업모자 + 부드러운 그림자**(iOS급) 선택 후, 다층 그림자·헤일로·엣지 스페큘러·금술 디테일까지 추가로 다듬음.
+- 디자인: 보라 3-stop 그라디언트(`#A78FFF→#7B5BF0→#5836C7`) 슈퍼타원(스쿼클) 위에 입체 학사모(보드 면 그라디언트·두께 음영·금색 술·접힘 음영) + 다층 contact shadow + 헤일로 + 글래스 림.
+- 생성 방식: `package.json` 무오염을 위해 **스크래치패드에 `sharp`만 임시 설치**, 파라메트릭 SVG 빌더(스쿼클 = 슈퍼타원 n=4.2 샘플링)로 `favicon.svg` + PNG 3종 래스터.
+  - 일반(192·512): 스쿼클 클립.
+  - **maskable(512)**: 풀블리드 보라 배경 + 모자를 중심 기준 0.78배 축소 → 안드로이드 세이프존(중앙 80%) 안이라 원형/스쿼클 마스킹에도 안 잘림.
+- 검증: sharp 산출 PNG 직접 육안 확인 + 빌드 manifest·dev 서버 HTTP 200 서빙·콘솔에러 0. (라이브 스크린샷은 이 PC 헤드리스 타임아웃으로 생략 — [[feedback_screenshot_assistance]])
+
+### 10.2 PWA theme_color 보라 통일
+- `vite.config.ts` manifest `theme_color` `#1d4ed8`(파랑) → `#7C6FF0`(보라). 설치 PWA의 상태바/스플래시/주소창 틴트가 앱 보라 톤과 일치. `background_color`는 흰색 유지.
+
+### 10.3 Dependabot — 보안 경보만
+- 판단: 완성된 소형 개인 프로젝트라 **버전 자동 PR(노이즈)은 끄고**, **보안 경보 + 보안 업데이트만** 켜기 추천. 사용자가 GitHub Settings에서 Dependabot alerts·security updates·Dependency graph Enable. `.github/dependabot.yml`(버전 업데이트)은 추가 안 함. (보너스 malware alerts·grouped security updates는 사용자 재량.)
+
+---
+
+## 11. 남은 일 (새 세션 인수인계)
+> 6차 세션: 앱 아이콘 보라 리디자인·theme_color·Dependabot 보안경보. 아래는 다음 후보.
 1. **import 이수구분 매핑**: '부전공'/'복수·연계전공' 성적표 표기를 사용자 확인 후 `transcript.ts` CAT 맵에 1줄씩 추가(현재 원본 표기 보존+경고). [[feedback_no_guessing]]
 2. **옛 Vercel `clac` 프로젝트 삭제**: 사용자가 Vercel 대시보드 → `knut-grad-clac` → Settings → Delete. (코드 작업 아님, 사용자 액션)
-3. (선택) manifest `theme_color` 보라 통일, Dependabot, GPA 게이지 바, 6학년 옵션, 옛 `retake` 데이터 정리, 대시보드 탭 복귀 카운트업 0-재생(원하면 다른 탭과 분리해 1회만).
+3. (선택) 6학년 옵션, 옛 Dependabot 보너스(malware alerts·grouped security updates) 토글.
+   - **6차 세션에 완료**: manifest `theme_color` 보라 통일, Dependabot 보안경보.
+   - **6차 세션에 사용자가 불필요로 결정**: GPA 게이지 바, 옛 `retake` 데이터 정리, 대시보드 탭 복귀 카운트업 0-재생.
